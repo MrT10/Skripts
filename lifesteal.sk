@@ -1,0 +1,143 @@
+###
+Lifesteal Skript v1.0
+Created by MrT1_
+Report bugs on the discord: https://discord.gg/zfDb6R9zmN
+Tested on 1.21, *might* work on other modern versions.
+
+Requires Skript 1.9+: https://github.com/SkriptLang/Skript/releases/latest
+Requires SkBee 3.5+: https://github.com/ShaneBeee/SkBee/releases/latest
+
+First time downloading this skript? Please go through the options
+below. They are essential to making sure everything works correctly.
+###
+
+
+options:
+# Please read EVERYTHING in the 'options' section to ensure full
+# functionality for the skript.
+
+  # What item the heart is.
+  item-type: red dye
+  
+  # What the heart is named.
+  item-name: &c❤ &fHeart
+  
+  
+  # How many hearts you can have equipt at once
+  max-hearts: 20
+  
+  # How long bans last for, in seconds. Set to '0' to fully disable bans.
+  ban-time: 600
+  
+  # How many hearts a player has after their ban has expired.
+  # Does not apply if 'ban-time' is '0'.
+  respawn-hearts: 3
+  
+  # The reason stated for the player's ban. Does not apply if
+  # 'ban-time' is '0'.
+  ban-reason: You have been eliminated!
+  
+  # The message broadcasted to the server after a player has
+  # been banned. Does not apply if 'ban-time' is '0'.
+  elimination-broadcast: &c&l%victim% has been eliminated!
+  
+  
+  # The message when a heart is redeemed.
+  heart-msg: &c❤ &aYou redeemed a heart! &7(Now at %player's max health%)
+  
+  # The message when you have too many hearts.
+  max-hearts-msg: &c❤ &eYou have reached the max amount of hearts!
+  
+  # The message when you withdraw a heart.
+  withdraw-msg: &c❤ &aYou withdrew %{_amount}% heart(s)! &7(Now at %player's max health%)
+  
+  # The message when you are trying to withdraw too many hearts.
+  few-withdraw-msg: &c❤ &eYou can not have less than 1 heart!
+  
+  # The message when no hearts can fit in your inventory.
+  full-withdraw-msg: &c❤ &eYou do not have inventory space to withdraw a heart!
+  
+  # The message on /lsreset
+  reset-msg: &c❤ &aReseted %{_player}%'s hearts!
+  
+  # The message on /lsgive
+  give-msg: &c❤ &aGave %{_player}% %{_amount}% heart(s)!
+
+
+# Code found beyond this point!
+on death of player: 
+  if victim's max health attribute is less than 3:
+    if {@ban-time} is 0:
+      stop
+    else:
+      set victim's max health attribute to {@respawn-hearts} * 2
+      execute console command "/tempban %victim% {@ban-time}s {@ban-reason}"
+      broadcast "{@elimination-broadcast}"
+      stop
+  drop {@item-type} named "{@item-name}" with nbt from "{""minecraft:custom_data"":{ls:""heart"",blacklisted:1b,credits:""Skript created by MrT1!""},""enchantment_glint_override"":true}" 1 block above victim's location without velocity
+  add nbt from "{Glowing:1b,PickupDelay:-32768,Invulnerable:1b}" to nbt of last dropped item
+  remove 1 from victim's max health
+
+on right click:
+  if player's tool is air:
+    stop
+  set {_n} to nbt of player's tool
+  if string tag "ls" of {_n} is "heart":
+    if player's max health attribute is more than or equal to ({@max-hearts} * 2):
+      send "{@max-hearts-msg}" to player
+      stop
+    add 2 to player's max health attribute
+    heal player by 1
+    send "{@heart-msg}" to player
+    remove 1 of player's tool from player
+
+command /lswithdraw [<integer>]:
+  aliases: withdraw
+  trigger:
+    if arg-1 is less than or equal to 0:
+      stop
+    if arg-1 is more than 99:
+      stop
+    if player doesn't have enough space for 1 of {@item-type} named "{@item-name}" with nbt from "{""minecraft:custom_data"":{ls:""heart"",blacklisted:1b,credits:""Skript created by MrT1!""},""enchantment_glint_override"":true}":
+      send "{@full-withdraw-msg}" to player
+      stop
+    if arg-1 is an integer:
+      set {_amount} to arg-1
+    else:
+      set {_amount} to 1
+    if player's max health attribute is less than (arg-1 + 1) * 2:
+      send "{@few-withdraw-msg}" to player
+      stop
+    give player {_amount} of {@item-type} named "{@item-name}" with nbt from "{""minecraft:custom_data"":{ls:""heart"",blacklisted:1b,credits:""Skript created by MrT1!""},""enchantment_glint_override"":true}"
+    remove {_amount} + {_amount} from player's max health attribute
+    send "{@withdraw-msg}"
+
+command /lsreset [<player>]:
+  permission: sk.ls.reset
+  trigger:
+    if arg-1 is set:
+      set {_player} to arg-1
+      set arg-1's max health attribute to 20
+      send "{@reset-msg}" to player
+      stop
+    set {_player} to player
+    set player's max health attribute to 20
+    send "{@reset-msg}" to player
+
+command /lsgive [<player>] [<integer>]:
+  permission: sk.ls.give
+  trigger:
+    if arg-2 is more than 99:
+      stop
+    if arg-2 is less than or equal to 0:
+      stop
+    if arg-1 is set:
+      set {_player} to arg-1
+    else:
+      set {_player} to player
+    if arg-2 is set:
+      set {_amount} to arg-2
+    else:
+      set {_amount} to 1
+    give {_player} {_amount} of {@item-type} named "{@item-name}" with nbt from "{""minecraft:custom_data"":{ls:""heart"",blacklisted:1b,credits:""Skript created by MrT1!""},""enchantment_glint_override"":true}"
+    send "{@give-msg}" to player

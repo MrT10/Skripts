@@ -1,0 +1,125 @@
+###
+Dupe Skript v2.0
+Created by MrT1_
+Report bugs on the discord: https://discord.gg/zfDb6R9zmN
+Tested on 1.21, *might* work on other modern versions.
+
+Requires Skript 1.9+: https://github.com/SkriptLang/Skript/releases/latest
+Requires SkBee 3.5+: https://github.com/ShaneBeee/SkBee/releases/latest
+
+First time downloading this skript? Please go through the options
+below. They are essential to making sure the skript works correctly.
+###
+
+
+options:
+# Please read EVERYTHING in the 'options' section to ensure full
+# functionality for the skript.
+   
+  # The text shown before all messages.
+  prefix: &7[&3&lServerName&7]
+  
+  # The message for duping an item. May result in chat flooding.
+  dupe-msg: none
+  
+  # The message for attempting to dupe a blacklisted item.
+  blacklisted-msg: &cThis item is blacklisted!
+  
+  # The message for attempting to dupe nothing.
+  air-msg: &cYou can't dupe air!
+  
+  # The message for a successful '/blacklist add'.
+  /bl-msg: &7This item has been blacklisted.
+  
+  # The message for a failed '/blacklist add'
+  /bl-fail-msg: &cThis item is already blacklisted!
+  
+  # The message for a successful '/blacklist remove'.
+  /bl-remove-msg: &7This item is no longer blacklisted.
+  
+  # The message for a failed '/blacklist remove'.
+  /bl-remove-fail-msg: &cThis item is not blacklisted!
+  
+  # The message for attempting to blacklist air.
+  /bl-air-msg: &cYou can not blacklist air!
+  
+  # The max value you can use in the /dupe command. High values can result
+  # in lag and crashes. 10 is recommended.
+  max-dupe: 10
+  
+  # What item data should result in an item being blacklisted, seperated by
+  # quotes. To blacklist a specific item types, use 'minecraft:item_id'
+  blacklisted-nbt: "lifesteal-smp-plugin", "minecraft:bedrock"
+
+
+# Code Below! If the options were properly configgurated, then you should not
+# have to change any of the code.
+
+command /dupe [<integer>]:
+  aliases: d
+  trigger:
+    # Check if the player is attempting to dupe air
+    if player's tool is air:
+      if "{@air-msg}" is not "none":
+        send "{@prefix} {@air-msg}"
+      stop
+    # Check if the player attempts to dupe blacklisted items
+    set {_n} to full nbt of player's tool 
+    if "%{_n}%" contains {@blacklisted-nbt} or "blacklisted:1b":
+      if "{@blacklisted-msg}" is not "none":
+        send "{@prefix} {@blacklisted-msg}"
+      stop
+    # Actual duping begins here
+    if "{@dupe-msg}" is not "none":
+      send "{@prefix} {@dupe-msg}"
+    # If  arg-1 is provided; Checks if it is over max dupe
+    if arg-1 is a number:
+      if arg-1 > {@max-dupe}:
+        loop {@max-dupe} times:
+          give player player's tool
+        stop
+      loop arg-1 times:
+        give player player's tool
+      stop
+    # If no arg-1, dupe:
+    give player player's tool
+
+# Fancy tab complete
+on tab complete of "/dupe" and "/d":
+	set tab completions for position 1 to "[<amount>]"
+
+command /blacklist [<text>]:
+  permission: sk.dupe.blacklist
+  trigger:
+    # Checks blacklisting air to prevent a console error
+    if player's tool is air:
+      if "{@/bl-air-msg}" is not "none":
+        send "{@prefix} {@/bl-air-msg}"
+        stop
+    # Attempts to blacklist item
+    set {_n} to full nbt of player's tool
+    if arg-1 is not "remove":
+      # Checks if item is already blacklisted:
+      if "%{_n}%" contains "blacklisted:1b":
+        if "{@/bl-fail-msg}" is not "none":
+          send "{@prefix} {@/bl-fail-msg}"
+      # Blacklists the item
+      else:
+        add nbt from "{blacklisted:1b}" to nbt of player's tool
+        if "{@/bl-msg}" is not "none":
+          send "{@prefix} {@/bl-msg}"
+    # Attempts to unblacklist an item
+    else:
+      # Checks if item is blacklisted
+      if "%{_n}%" contains "blacklisted:1b":
+        delete tag "blacklisted" of nbt of player's tool
+        if "{@/bl-remove-msg}" is not "none":
+          send "{@prefix} {@/bl-remove-msg}"
+      # If item was not already blacklisted
+      else:
+        if "{@/bl-remove-fail-msg}" is not "none":
+          send "{@prefix} {@/bl-remove-fail-msg}"
+
+# Fancy tab complete part 2
+on tab complete of "/blacklist" and "/bl":
+	set tab completions for position 1 to "add" and "remove"
