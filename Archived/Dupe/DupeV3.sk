@@ -1,0 +1,109 @@
+###
+Dupe Skript v3.0
+Created by MrT1_
+
+Tested on 1.21, may be broken on earlier versions!
+Requires Skript 2.9+ and SkBee 6.0+
+
+Important: 
+Please read and modify the options of this script in order to
+allow for complete functionality!
+###
+
+
+
+options:
+
+    # The prefix before every message sent by the script. 
+  Message Prefix: &7[&6Server&7]
+  
+    # The message sent when running duping regular items. Set to
+    # 'none' for no message. Use '%{_amount}%' to show how many
+    # times the item was duped.
+  Dupe Message: &fYou duped your tool &a%{_amount}% &ftime(s)!
+  
+    # The message sent when duping air. Set to 'none' for no
+    # message.
+  Air Dupe Message: &cYou can't dupe air!
+  
+    # The message sent when duping a blacklisted item. Set to
+    # 'none' for no message.
+  Blacklisted Dupe Message: &cThis item is blacklisted!
+  
+    # The message sent when blacklisting an item with /blacklist.
+  Item Blacklisted Message: &fThis item is now blacklisted!
+  
+    # The message sent when unblacklisting an item with /blacklist.
+  Item Unblacklisted Message: &fThis item is no longer blacklisted!
+  
+  
+    # How many times you can dupe an item with a single command. 
+    # NOTE: Setting this to a very high number can cause lag and
+    # server crashes. '10' is recommended!
+  Max Dupe Amount: 10
+  
+    # Item types that are blacklisted.
+    # Format: 'Item 1, Item 2, and Item 3'
+  Blacklisted Items: command block, chain command block, repeating command block, minecart with command block, bedrock, barrier, light block, structure block, and jigsaw block
+  
+    # NBT strings in items that are blacklisted.
+    # Format: '"NBT:1", "NBT:2", or "NBT3"'
+  Blacklisted NBT: "nbt__1", "nbt__2", or "nbt__3"
+  
+  
+  # End of options.
+
+
+
+# Code starts here!
+
+command /dupe [<integer>] [<text>]:
+  aliases: d
+  trigger:
+  
+    # Air Check
+    if player's tool is air:
+      if "{@Air Dupe Message}" is not "none":
+        send "{@Message Prefix}&r {@Air Dupe Message}" to player
+      stop
+    
+    # Blacklisted Item Check
+    set {_i::*} to {@Blacklisted Items}
+    loop {_i::*}:
+      if "%full nbt of player's tool%" contains string tag "id" of full nbt of {_i::%loop-index%}:
+        if "{@Blacklisted Dupe Message}" is not "none":
+          send "{@Message Prefix}&r {@Blacklisted Dupe Message}" to player
+        stop
+    
+    # Blacklisted NBT Check
+    if "%full nbt of player's tool%" contains {@Blacklisted NBT} or "{blacklisted:1b}":
+      if "{@Blacklisted Dupe Message}" is not "none":
+        send "{@Message Prefix}&r {@Blacklisted Dupe Message}" to player
+      stop
+    
+    # Dupe
+    if arg-1 is an integer:
+      set {_amount} to arg-1
+      if {_amount} > {@Max Dupe Amount}:
+        set {_amount} to {@Max Dupe Amount}
+    else:
+      set {_amount} to 1
+    loop {_amount} times:
+      give player player's tool
+    if "{@Dupe Message}" is not "none":
+      send "{@Message Prefix}&r {@Dupe Message}" to player
+    stop
+
+on tab complete of "/dupe" and "/d":
+	set tab completions for position 1 to "[<Amount>]"
+
+
+command /blacklist:
+  permission: sk.blacklist
+  trigger:
+    if boolean tag "blacklisted" of custom nbt of player's tool is true:
+      delete boolean tag "blacklisted" of custom nbt of player's tool
+      send "{@Message Prefix}&r {@Item Unblacklisted Message}" to player
+    else:
+      add nbt from "{blacklisted:true}" to custom nbt of player's tool
+      send "{@Message Prefix}&r {@Item Blacklisted Message}" to player
