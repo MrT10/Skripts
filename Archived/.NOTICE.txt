@@ -1,0 +1,7 @@
+!! NOTICE !!
+
+Scripts found in the "Archive" folder are not made for
+public use! These scripts may contain major bugs, be
+generally outdated, or may just be bad. I will never
+update the scripts found here, nor will I provide any
+amount of support for those that use them!
